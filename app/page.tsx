@@ -20,17 +20,10 @@ export default function Home() {
       <main>
         <Hero />
         <SectionBlend />
-
-        {/* About Section with Galaxy Backdrop */}
-        <div className="relative w-full">
-          <MilkyWay />
-          <div className="relative z-10">
-            <About />
-          </div>
-        </div>
+        <About />
 
         {/* Experience Section with Milky Way Backdrop */}
-        <div className="relative w-full">
+        <div className="relative w-full overflow-hidden">
           <MilkyWay />
           <Experience />
         </div>
