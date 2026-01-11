@@ -77,7 +77,7 @@ const experiences = [
 
 export function Experience() {
     return (
-        <section id="experience" className="relative py-32 px-4 md:px-0 max-w-6xl mx-auto min-h-screen bg-black/30 backdrop-blur-sm rounded-3xl my-24 border border-white/5">
+        <section id="experience" className="relative py-32 px-4 md:px-0 max-w-6xl mx-auto min-h-screen bg-black/20 backdrop-blur-sm rounded-3xl my-24 border border-white/5">
             {/* Header - Cinematic Title */}
             <div className="mb-32 flex items-baseline justify-between border-b border-white/10 pb-4 pl-4 md:pl-0">
                 <div className="relative">

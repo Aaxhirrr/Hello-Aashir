@@ -24,7 +24,6 @@ float hash(vec2 p) {
     return fract(p.x * p.y);
 }
 
-// 2D Noise
 float noise(vec2 p) {
     vec2 i = floor(p);
     vec2 f = fract(p);
@@ -36,7 +35,6 @@ float noise(vec2 p) {
     return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
 }
 
-// FBM (Fractal Brownian Motion)
 float fbm(vec2 p) {
     float v = 0.0;
     float a = 0.5;
@@ -51,50 +49,61 @@ float fbm(vec2 p) {
 
 void main() {
     vec2 uv = vUv - 0.5;
-    // Fix aspect ratio
     float aspect = iResolution.x / iResolution.y;
     uv.x *= aspect;
     
-    // Zoom out a bit
-    uv *= 2.0;
+    // === CINEMATIC TILT (Like Black Hole) ===
+    float angle = -0.6; // Diagonal tilt
+    float c = cos(angle);
+    float s = sin(angle);
+    mat2 rot = mat2(c, -s, s, c);
+    uv = rot * uv;
     
-    // Time
-    float t = iTime * 0.1;
+    // === SQUASH INTO GALACTIC DISK/TRAIL ===
+    // This makes it look like a side-view galaxy or "trail"
+    uv.y *= 3.5; 
     
-    // Rotation logic
-    float len = length(uv);
-    float angle = atan(uv.y, uv.x);
+    // Zoom/Scale
+    uv *= 1.5;
     
-    // Spiral rotation (slower at edges)
-    float angleOffset = t * 0.5 + (1.0 / (len + 0.1)) * 0.5; 
+    // === ANIMATION ===
+    // Slow drift, exactly like the black hole settling
+    float t = iTime * 0.15;
     
-    // Complex coordinate wrapping for nebula feel
-    vec2 p = vec2(cos(angle + angleOffset), sin(angle + angleOffset)) * len;
+    // Flow along the "trail" (x-axis in rotated space)
+    vec2 flow = vec2(t * 0.5, t * 0.1);
     
-    // 1. Base Galaxy Body
-    // Distortion for gas clouds
-    float gas = fbm(p * 3.0 + t * 0.2); 
+    // Generate Nebula Structure
+    // We offset logic based on distance from center line (y) to make it dense in middle
+    float density = 1.0 - smoothstep(0.0, 1.0, abs(uv.y));
     
-    // 2. Color Palette (Interstellar: Purple, Blue, Gold)
-    vec3 colPurple = vec3(0.2, 0.0, 0.3);
-    vec3 colBlue = vec3(0.05, 0.1, 0.4);
-    vec3 colGold = vec3(1.0, 0.8, 0.4);
-    vec3 colBlack = vec3(0.0);
+    float gas = fbm(uv * 2.0 + flow); // Base structure
+    float detail = fbm(uv * 4.0 - flow * 0.5); // Counter-flow detail
     
-    // Mix colors based on noise
-    vec3 col = mix(colBlack, colBlue, smoothstep(0.2, 0.6, gas));
-    col = mix(col, colPurple, smoothstep(0.4, 0.8, gas));
+    // Combine
+    float nebula = (gas + detail) * 0.5;
+    nebula *= density * density; // Fade out vertical edges strongly
     
-    // 3. Bright Core / Dust Lanes
-    float core = 1.0 / (len * 2.0 + 0.1); // Bright center
-    col += colGold * core * 0.1;
-
-    // 4. Alpha / Shape Mask
-    // Fade out edges
-    float mask = smoothstep(1.5, 0.5, len);
+    // === COLOR PALETTE (Interstellar) ===
+    vec3 colDeep = vec3(0.05, 0.0, 0.1); // Deep Void Purple
+    vec3 colMid = vec3(0.1, 0.1, 0.4);   // Cosmic Blue
+    vec3 colCore = vec3(1.0, 0.8, 0.5);  // Core Gold/White
     
-    // Final output
-    gl_FragColor = vec4(col, mask * 0.6); // 0.6 opacity overall
+    vec3 col = mix(colDeep, colMid, smoothstep(0.2, 0.6, nebula));
+    col = mix(col, colCore, smoothstep(0.6, 1.2, nebula));
+    
+    // Add "Stars" or dust specs in the trail
+    float dust = hash(uv * 10.0 + t);
+    if (dust > 0.98 && nebula > 0.3) {
+        float twinkle = sin(t * 5.0 + dust * 100.0) * 0.5 + 0.5;
+        col += vec3(twinkle * 0.8);
+    }
+    
+    // Soften edges
+    float alpha = smoothstep(0.0, 0.4, nebula);
+    
+    // Final composite
+    gl_FragColor = vec4(col, alpha * 0.7);
 }
 `
 
@@ -113,7 +122,7 @@ function MilkyWayMesh() {
         if (mesh.current) {
             uniforms.iTime.value = state.clock.getElapsedTime()
             uniforms.iResolution.value.set(state.viewport.width, state.viewport.height)
-            mesh.current.scale.set(state.viewport.width, state.viewport.height, 1)
+            mesh.current.scale.set(state.viewport.width, state.viewport.height, 1) // Fullscreen
         }
     })
 
@@ -125,7 +134,7 @@ function MilkyWayMesh() {
                 fragmentShader={fragmentShader}
                 uniforms={uniforms}
                 transparent={true}
-                blending={THREE.AdditiveBlending} // Additive for glowing look
+                blending={THREE.AdditiveBlending}
                 depthWrite={false}
             />
         </mesh>
@@ -134,8 +143,8 @@ function MilkyWayMesh() {
 
 export function MilkyWay() {
     return (
-        <div className="absolute inset-0 w-full h-full -z-10 opacity-50 pointer-events-none mix-blend-screen">
-            <Canvas camera={{ position: [0, 0, 1] }} dpr={[1, 1]}> {/* Lower DPR for performance */}
+        <div className="absolute inset-0 w-full h-full -z-10 opacity-80 pointer-events-none mix-blend-screen">
+            <Canvas camera={{ position: [0, 0, 1] }} dpr={[1, 1.5]}>
                 <MilkyWayMesh />
             </Canvas>
         </div>
