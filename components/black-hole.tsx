@@ -159,7 +159,9 @@ void main() {
     }
     
     // === BACKGROUND STARS ===
-    if (length(col) < 0.1) {
+    // Only draw stars if we are NOT inside the event horizon (r > kRadius)
+    // or if the color is dark enough elsewhere.
+    if (!isInsideHole && length(col) < 0.1) {
          float s = random(uv * 4.0);
          if (s > 0.993) {
              float twinkle = sin(iTime * 1.0 + s * 100.0) * 0.5 + 0.5;
@@ -184,7 +186,19 @@ function BlackHoleMesh() {
 
     useFrame((state) => {
         if (mesh.current) {
-            uniforms.iTime.value = state.clock.getElapsedTime()
+            const t = state.clock.getElapsedTime()
+
+            // "Fast start -> Slow settle" Time Integration
+            // Velocity V(t) = vMin + (vMax - vMin) * exp(-decay * t)
+            // Position T(t) = vMin * t + (vMax - vMin)/decay * (1 - exp(-decay * t))
+
+            const vMin = 1.0; // Settle speed (multiplied by 0.2 in shader)
+            const vMax = 20.0; // Initial surge speed
+            const decay = 0.8; // How fast it settles
+
+            const simulatedTime = vMin * t + ((vMax - vMin) / decay) * (1 - Math.exp(-decay * t))
+
+            uniforms.iTime.value = simulatedTime
             uniforms.iResolution.value.set(state.viewport.width, state.viewport.height)
 
             // Scale mesh to fill viewport exactly
