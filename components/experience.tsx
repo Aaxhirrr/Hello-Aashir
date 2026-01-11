@@ -27,7 +27,7 @@ const experiences = [
         company: "Sedai Inc.",
         period: "May 2025 — Oct 2025",
         desc: "Built log analysis pipelines on Amazon Bedrock. Unified schemas to improve consistency by 40% and documented pipeline architecture in Git.",
-        tech: ["AWS Bedrock", "Go", "Distributed Systems"]
+        tech: ["AWS Bedrock", "Python", "Distributed Systems"]
     },
     {
         id: "LOG-04",
