@@ -10,6 +10,7 @@ import { Footer } from "./footer"
 import { CustomCursor } from "./custom-cursor"
 import { SmoothScroll } from "../components/smooth-scroll"
 import { SectionBlend } from "./section-blend"
+import { MilkyWay } from "../components/milky-way"
 
 export default function Home() {
   return (
@@ -20,7 +21,13 @@ export default function Home() {
         <Hero />
         <SectionBlend />
         <About />
-        <Experience />
+
+        {/* Experience Section with Milky Way Backdrop */}
+        <div className="relative w-full">
+          <MilkyWay />
+          <Experience />
+        </div>
+
         <Works />
         <TechMarquee />
         <GithubActivity />
