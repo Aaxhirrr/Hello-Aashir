@@ -165,7 +165,11 @@ void main() {
          float s = random(uv * 4.0);
          if (s > 0.993) {
              float twinkle = sin(iTime * 1.0 + s * 100.0) * 0.5 + 0.5;
-             col += vec3(twinkle * 0.5);
+             
+             // Smooth Fade-In on Load (0.5s to 3.5s)
+             float starFade = smoothstep(0.5, 3.5, iTime);
+             
+             col += vec3(twinkle * 0.5) * starFade;
          }
     }
 

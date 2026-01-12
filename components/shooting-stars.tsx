@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useRef } from "react"
+import { motion } from "framer-motion"
 
 interface Star {
     id: number
@@ -47,21 +48,27 @@ export function ShootingStars() {
 
     return (
         <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden z-[1]">
-            {stars.map(star => (
-                <span
-                    key={star.id}
-                    className="absolute w-[2px] h-[2px] bg-white rounded-full opacity-0"
-                    style={{
-                        top: `${star.top}%`,
-                        left: `${star.left}%`,
-                        boxShadow: "0 0 0 4px rgba(255, 255, 255, 0.1), 0 0 0 8px rgba(255, 255, 255, 0.1), 0 0 20px rgba(255, 255, 255, 1)",
-                        animation: `shooting-star ${star.duration}s linear forwards`
-                    }}
-                >
-                    {/* Tail */}
-                    <span className="absolute top-1/2 right-[0px] -translate-y-1/2 w-[300px] h-[1px] bg-gradient-to-l from-white via-transparent to-transparent opacity-80" />
-                </span>
-            ))}
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 3, ease: "easeInOut" }}
+            >
+                {stars.map(star => (
+                    <span
+                        key={star.id}
+                        className="absolute w-[2px] h-[2px] bg-white rounded-full opacity-0"
+                        style={{
+                            top: `${star.top}%`,
+                            left: `${star.left}%`,
+                            boxShadow: "0 0 0 4px rgba(255, 255, 255, 0.1), 0 0 0 8px rgba(255, 255, 255, 0.1), 0 0 20px rgba(255, 255, 255, 1)",
+                            animation: `shooting-star ${star.duration}s linear forwards`
+                        }}
+                    >
+                        {/* Tail */}
+                        <span className="absolute top-1/2 right-[0px] -translate-y-1/2 w-[300px] h-[1px] bg-gradient-to-l from-white via-transparent to-transparent opacity-80" />
+                    </span>
+                ))}
+            </motion.div>
 
             <style jsx>{`
         @keyframes shooting-star {
