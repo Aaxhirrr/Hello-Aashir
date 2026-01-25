@@ -1,7 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { Canvas, useFrame } from "@react-three/fiber"
+import { OrbitControls, useTexture, Text } from "@react-three/drei"
+import * as THREE from "three"
 
 const projects = [
   {
@@ -66,186 +69,236 @@ const projects = [
   },
 ]
 
-export function Works() {
-  const [activeId, setActiveId] = useState<string>("01")
-  const [modalOpen, setModalOpen] = useState(false)
+function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) => void }) {
+  // Config matching the reference template
+  const PARTICLE_COUNT = 1500
+  const PARTICLE_SIZE_MIN = 0.005
+  const PARTICLE_SIZE_MAX = 0.010
+  const SPHERE_RADIUS = 9
+  const POSITION_RANDOMNESS = 4
+  const ROTATION_SPEED_X = 0.0
+  const ROTATION_SPEED_Y = 0.002 // Slightly faster for showcase
+
+  // Repeat projects to fill the orbit (targets ~25 images)
+  const repeatedProjects = useMemo(() => {
+    let list: typeof projects = []
+    for (let i = 0; i < 5; i++) {
+      list = [...list, ...projects]
+    }
+    return list
+  }, [])
+
+  const groupRef = useRef<THREE.Group>(null)
+
+  // Load Textures
+  // Note: We use the same image path multiple times, useTexture handles caching
+  const textureUrls = repeatedProjects.map(p => p.image)
+  const textures = useTexture(textureUrls)
+
+  useMemo(() => {
+    textures.forEach((texture) => {
+      if (texture) {
+        texture.wrapS = THREE.ClampToEdgeWrapping
+        texture.wrapT = THREE.ClampToEdgeWrapping
+        texture.flipY = false
+        texture.colorSpace = THREE.SRGBColorSpace
+      }
+    })
+  }, [textures])
+
+  const particles = useMemo(() => {
+    const temp = []
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const phi = Math.acos(-1 + (2 * i) / PARTICLE_COUNT)
+      const theta = Math.sqrt(PARTICLE_COUNT * Math.PI) * phi
+      const radiusVariation = SPHERE_RADIUS + (Math.random() - 0.5) * POSITION_RANDOMNESS
+      const x = radiusVariation * Math.cos(theta) * Math.sin(phi)
+      const y = radiusVariation * Math.cos(phi)
+      const z = radiusVariation * Math.sin(theta) * Math.sin(phi)
+
+      temp.push({
+        position: [x, y, z] as [number, number, number],
+        scale: Math.random() * (PARTICLE_SIZE_MAX - PARTICLE_SIZE_MIN) + PARTICLE_SIZE_MIN,
+        color: new THREE.Color().setHSL(
+          Math.random() * 0.1 + 0.05, 0.8, 0.6 + Math.random() * 0.3
+        ),
+      })
+    }
+    return temp
+  }, [])
+
+  const orbitingImages = useMemo(() => {
+    const temp = []
+    const total = repeatedProjects.length
+
+    for (let i = 0; i < total; i++) {
+      const angle = (i / total) * Math.PI * 2
+      const x = SPHERE_RADIUS * Math.cos(angle)
+      const y = 0
+      const z = SPHERE_RADIUS * Math.sin(angle)
+
+      const position = new THREE.Vector3(x, y, z)
+      const center = new THREE.Vector3(0, 0, 0)
+      const outwardDirection = position.clone().sub(center).normalize()
+
+      const euler = new THREE.Euler()
+      const matrix = new THREE.Matrix4()
+      matrix.lookAt(position, position.clone().add(outwardDirection), new THREE.Vector3(0, 1, 0))
+      euler.setFromRotationMatrix(matrix)
+      euler.z += Math.PI // Correction for plane orientation
+
+      temp.push({
+        position: [x, y, z] as [number, number, number],
+        rotation: [euler.x, euler.y, euler.z] as [number, number, number],
+        projectIndex: i, // Index into repeatedProjects
+        textureIndex: i, // Index into textures
+      })
+    }
+    return temp
+  }, [repeatedProjects])
+
+  useFrame(() => {
+    if (groupRef.current) {
+      groupRef.current.rotation.y += ROTATION_SPEED_Y
+    }
+  })
 
   return (
-    <section id="works" className="relative py-32 px-4 md:px-8 max-w-[1600px] mx-auto">
+    <group ref={groupRef}>
+      {/* Particles */}
+      {particles.map((p, i) => (
+        <mesh key={`p-${i}`} position={p.position} scale={p.scale}>
+          <sphereGeometry args={[1, 8, 6]} />
+          <meshBasicMaterial color={p.color} transparent opacity={0.6} />
+        </mesh>
+      ))}
 
-      {/* Section Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8 }}
-        className="mb-12 flex flex-col items-center text-center gap-2"
-      >
+      {/* Orbiting Project Images */}
+      {orbitingImages.map((img, i) => (
+        <group key={`img-${i}`} position={img.position} rotation={img.rotation}>
+          {/* Image Plane */}
+          <mesh
+            onClick={(e) => {
+              e.stopPropagation()
+              onProjectSelect(repeatedProjects[img.projectIndex])
+            }}
+            onPointerOver={() => document.body.style.cursor = 'pointer'}
+            onPointerOut={() => document.body.style.cursor = 'auto'}
+          >
+            <planeGeometry args={[1.5, 1.5]} />
+            <meshBasicMaterial map={textures[img.textureIndex]} side={THREE.DoubleSide} />
+          </mesh>
+
+          {/* Text Label Below - Visible only from front roughly, but we just render it */}
+          <Text
+            position={[0, -1.0, 0]}
+            fontSize={0.2}
+            color="white"
+            anchorX="center"
+            anchorY="middle"
+            opacity={0.8}
+          >
+            {repeatedProjects[img.projectIndex].title}
+          </Text>
+        </group>
+      ))}
+    </group>
+  )
+}
+
+export function Works() {
+  const [selectedProject, setSelectedProject] = useState<typeof projects[0] | null>(null)
+
+  return (
+    <section id="works" className="relative w-full h-screen bg-black overflow-hidden">
+
+      {/* Header Overlay */}
+      <div className="absolute top-8 left-0 right-0 z-10 flex flex-col items-center pointer-events-none">
         <p className="font-mono text-[10px] tracking-[0.4em] text-amber-500/60 uppercase">
-          05 // SELECTED WORKS
+          05 // PROJECT ORBIT
         </p>
         <h2 className="font-sans text-4xl md:text-6xl font-bold tracking-tighter text-white">
           Selected <span className="italic font-serif font-light text-white/50">Works</span>
         </h2>
-      </motion.div>
+      </div>
 
-      {/* Accordion Container */}
-      <div className="flex flex-col md:flex-row w-full h-[600px] md:h-[500px] gap-2 md:gap-4">
-        {projects.map((project) => (
-          <motion.div
-            key={project.id}
-            layout
-            onClick={(e) => {
-              if (project.private) {
-                e.preventDefault()
-                setModalOpen(true)
-              }
-              if (window.innerWidth < 768) {
-                setActiveId(project.id)
-              }
-            }}
-            onMouseEnter={() => setActiveId(project.id)}
-            className={`
-                    relative h-full rounded-2xl overflow-hidden cursor-pointer transition-all duration-700 ease-out border border-white/5
-                    ${activeId === project.id
-                ? "flex-[4] md:flex-[3] border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.1)]"
-                : "flex-[1] opacity-70 grayscale hover:opacity-100 hover:grayscale-0"}
-                `}
-          >
-            <a
-              href={project.private ? "#" : project.link}
-              target={project.private ? "_self" : activeId === project.id ? "_blank" : "_self"}
-              className="block w-full h-full relative"
-              onClick={(e) => {
-                if (activeId !== project.id) e.preventDefault(); // Prevent click logic if expanding
-              }}
+      {/* 3D Scene */}
+      <Canvas camera={{ position: [-12, 2, 12], fov: 45 }}>
+        <ambientLight intensity={0.5} />
+        <pointLight position={[10, 10, 10]} intensity={1} />
+
+        {/* The Orbit System */}
+        <ParticleSphere onProjectSelect={setSelectedProject} />
+
+        <OrbitControls enablePan={true} enableZoom={true} enableRotate={true} minDistance={5} maxDistance={40} />
+      </Canvas>
+
+      {/* Project Details Modal */}
+      <AnimatePresence>
+        {selectedProject && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedProject(null)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative bg-[#0a0a0a] border border-white/10 rounded-2xl p-8 max-w-2xl w-full shadow-2xl"
             >
-              {/* Background Image */}
-              <div className="absolute inset-0">
-                <img
-                  src={project.image}
-                  alt={project.title}
-                  className={`
-                                w-full h-full object-cover transition-transform duration-1000
-                                ${activeId === project.id ? "scale-105" : "scale-125"}
-                            `}
-                />
-                <div className={`
-                            absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent transition-opacity duration-500
-                            ${activeId === project.id ? "opacity-90" : "opacity-60"}
-                         `} />
-              </div>
+              <button
+                onClick={() => setSelectedProject(null)}
+                className="absolute top-4 right-4 text-white/40 hover:text-white"
+              >
+                ✕
+              </button>
 
-              {/* Content Container */}
-              <div className="absolute inset-0 p-6 flex flex-col justify-end overflow-hidden">
-
-                {/* ID Marker (Always Visible) */}
-                <div className="absolute top-6 left-6 font-mono text-xs text-amber-500/60 tracking-[0.2em] border-l border-amber-500/60 pl-2">
-                  {project.id}
+              <div className="flex flex-col md:flex-row gap-8">
+                <div className="w-full md:w-1/3 aspect-video md:aspect-square bg-white/5 rounded-lg overflow-hidden">
+                  <img
+                    src={selectedProject.image}
+                    alt={selectedProject.title}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-
-                {/* Collapsed Vertical Text (Visible when NOT active) */}
-                <div className={`
-                             absolute inset-0 flex items-center justify-center transition-opacity duration-300
-                             ${activeId !== project.id ? "opacity-100 delay-300" : "opacity-0"}
-                         `}>
-                  <h3 className="font-mono text-2xl text-white/60 tracking-[0.5em] uppercase -rotate-90 whitespace-nowrap">
-                    {project.title.substring(0, 6).toUpperCase()}
-                  </h3>
-                </div>
-
-                {/* Expanded Content (Visible when active) */}
-                <div className={`
-                            flex flex-col gap-3 transition-all duration-500 transform
-                            ${activeId === project.id ? "opacity-100 translate-y-0 delay-100" : "opacity-0 translate-y-10 absolute bottom-6"}
-                        `}>
-
-                  <div className="flex justify-between items-end">
+                <div className="flex-1">
+                  <div className="flex justify-between items-start mb-2">
                     <div>
-                      {project.award && (
-                        <div className="mb-2 inline-flex items-center gap-1.5 px-2 py-1 bg-amber-500/10 border border-amber-500/20 rounded">
-                          <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">
-                            {project.award.includes("1st") ? "🏆 Trophy" : "🏅 Award"}
-                          </span>
-                          <div className="w-px h-2 bg-amber-500/30" />
-                          <span className="text-[9px] font-mono text-amber-200/80">
-                            {project.award.split(" - ")[1]}
-                          </span>
-                        </div>
-                      )}
-                      <h3 className="text-3xl md:text-5xl font-bold text-white leading-none">
-                        {project.title}
-                      </h3>
-                      <p className="font-mono text-xs text-amber-500/80 uppercase tracking-widest mt-1">
-                        {project.subtitle}
-                      </p>
+                      <h3 className="text-3xl font-bold text-white">{selectedProject.title}</h3>
+                      <p className="text-amber-500/80 font-mono text-xs tracking-widest uppercase">{selectedProject.subtitle}</p>
                     </div>
-
-                    <div className={`w-12 h-12 rounded-full border border-white/20 flex items-center justify-center ${project.private ? "bg-red-500/10 text-red-500" : "bg-white/10 text-white"}`}>
-                      {project.private ? (
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                      ) : (
-                        <svg className="w-5 h-5 -rotate-45" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                      )}
-                    </div>
+                    <span className="text-white/20 font-mono text-4xl font-bold">{selectedProject.id}</span>
                   </div>
 
-                  <p className="text-sm text-white/60 font-light leading-relaxed max-w-xl">
-                    {project.description}
+                  <p className="text-white/60 text-sm leading-relaxed mb-6 border-l-2 border-white/10 pl-4 py-1">
+                    {selectedProject.description}
                   </p>
 
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    {project.tags.map(tag => (
-                      <span key={tag} className="px-2 py-1 bg-white/5 border border-white/10 rounded text-[9px] font-mono text-white/50 uppercase tracking-wider hover:bg-white/10 transition-colors">
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    {selectedProject.tags.map(tag => (
+                      <span key={tag} className="px-2 py-1 bg-white/5 rounded text-[10px] text-white/40 uppercase tracking-wider font-mono border border-white/5">
                         {tag}
                       </span>
                     ))}
                   </div>
 
+                  <div className="flex gap-4">
+                    <a
+                      href={selectedProject.link}
+                      target="_blank"
+                      className={`px-6 py-2 rounded-full font-mono text-xs uppercase tracking-widest transition-all ${selectedProject.private
+                          ? "bg-red-500/10 text-red-500 border border-red-500/20 cursor-not-allowed"
+                          : "bg-white text-black hover:bg-amber-400 hover:scale-105"
+                        }`}
+                    >
+                      {selectedProject.private ? "Private Repo" : "View Source"}
+                    </a>
+                  </div>
                 </div>
-              </div>
-            </a>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Security Modal for Private Project */}
-      <AnimatePresence>
-        {modalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setModalOpen(false)}
-              className="absolute inset-0 bg-black/90 backdrop-blur-md"
-            />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="relative bg-[#050505] border border-red-500/20 rounded-xl p-8 max-w-md w-full shadow-[0_0_50px_rgba(220,38,38,0.15)] overflow-hidden"
-            >
-              <div className="absolute top-0 left-0 w-full h-1 bg-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.8)] animate-[scan_2s_ease-in-out_infinite]" />
-              <div className="flex flex-col items-center text-center gap-4 relative z-10">
-                <div className="w-16 h-16 rounded-full bg-red-900/10 flex items-center justify-center border border-red-500/20 mb-2">
-                  <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                </div>
-                <h3 className="font-mono text-xl text-red-500 tracking-widest uppercase">Classified Asset</h3>
-                <p className="text-white/60 text-sm">
-                  Repository hosted securely on <span className="text-white">AWS CodeCommit</span>.
-                </p>
-                <p className="text-white/40 text-xs max-w-xs">
-                  Restricted access due to TIAA/Fintech IP Protection Protocols.
-                </p>
-                <button
-                  onClick={() => setModalOpen(false)}
-                  className="mt-6 px-8 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded text-[10px] font-mono tracking-[0.2em] text-red-400 transition-colors uppercase"
-                >
-                  Close Protocol
-                </button>
               </div>
             </motion.div>
           </div>
