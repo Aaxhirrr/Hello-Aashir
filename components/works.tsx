@@ -86,6 +86,7 @@ function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) =
     textures.forEach((texture) => {
       if (texture) {
         texture.colorSpace = THREE.SRGBColorSpace
+        texture.flipY = false
       }
     })
   }, [textures])
@@ -158,6 +159,7 @@ function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) =
         >
           <group scale={[1, 1, 1]}>
             <mesh
+              scale={[-1, 1, 1]}
               onClick={(e) => {
                 e.stopPropagation()
                 onProjectSelect(projects[img.projectIndex])
@@ -178,7 +180,7 @@ function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) =
               distanceFactor={10}
               style={{ pointerEvents: 'none' }}
             >
-              <div className="font-mono text-white text-xs tracking-[0.2em] whitespace-nowrap bg-black/50 backdrop-blur-sm px-2 py-1 rounded border border-white/10 uppercase">
+              <div className="font-serif italic text-white text-xs tracking-[0.2em] whitespace-nowrap bg-black/50 backdrop-blur-sm px-2 py-1 rounded border border-white/10 uppercase">
                 {projects[img.projectIndex].title}
               </div>
             </Html>
