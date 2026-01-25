@@ -6,7 +6,6 @@ import "./globals.css"
 import { Navbar } from "./navbar"
 import { CustomCursor } from "../components/custom-cursor"
 import { SmoothScroll } from "../components/smooth-scroll"
-import { Footer } from "../components/footer"
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -40,7 +39,6 @@ export default function RootLayout({
           <CustomCursor />
           <Navbar />
           {children}
-          <Footer />
           <Analytics />
         </SmoothScroll>
       </body>

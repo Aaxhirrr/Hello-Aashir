@@ -9,7 +9,7 @@ const navLinks = [
   { label: "About", href: "/about" },
   { label: "Experience", href: "/experience" },
   { label: "Work", href: "/work" },
-  { label: "Contact", href: "#contact" }, // Keep hash for footer if desired, or make page
+  { label: "Contact", href: "/contact" },
 ]
 
 export function Navbar() {
