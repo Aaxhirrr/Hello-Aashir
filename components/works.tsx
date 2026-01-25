@@ -70,16 +70,13 @@ const projects = [
 ]
 
 function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) => void }) {
-  // Config matching the reference template
   const PARTICLE_COUNT = 1500
   const PARTICLE_SIZE_MIN = 0.005
   const PARTICLE_SIZE_MAX = 0.010
   const SPHERE_RADIUS = 9
   const POSITION_RANDOMNESS = 4
-  const ROTATION_SPEED_X = 0.0
-  const ROTATION_SPEED_Y = 0.002 // Slightly faster for showcase
+  const ROTATION_SPEED_Y = 0.002
 
-  // Repeat projects to fill the orbit (targets ~25 images)
   const repeatedProjects = useMemo(() => {
     let list: typeof projects = []
     for (let i = 0; i < 5; i++) {
@@ -90,8 +87,6 @@ function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) =
 
   const groupRef = useRef<THREE.Group>(null)
 
-  // Load Textures
-  // Note: We use the same image path multiple times, useTexture handles caching
   const textureUrls = repeatedProjects.map(p => p.image)
   const textures = useTexture(textureUrls)
 
@@ -145,13 +140,13 @@ function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) =
       const matrix = new THREE.Matrix4()
       matrix.lookAt(position, position.clone().add(outwardDirection), new THREE.Vector3(0, 1, 0))
       euler.setFromRotationMatrix(matrix)
-      euler.z += Math.PI // Correction for plane orientation
+      euler.z += Math.PI
 
       temp.push({
         position: [x, y, z] as [number, number, number],
         rotation: [euler.x, euler.y, euler.z] as [number, number, number],
-        projectIndex: i, // Index into repeatedProjects
-        textureIndex: i, // Index into textures
+        projectIndex: i,
+        textureIndex: i,
       })
     }
     return temp
@@ -165,7 +160,6 @@ function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) =
 
   return (
     <group ref={groupRef}>
-      {/* Particles */}
       {particles.map((p, i) => (
         <mesh key={`p-${i}`} position={p.position} scale={p.scale}>
           <sphereGeometry args={[1, 8, 6]} />
@@ -173,10 +167,8 @@ function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) =
         </mesh>
       ))}
 
-      {/* Orbiting Project Images */}
       {orbitingImages.map((img, i) => (
         <group key={`img-${i}`} position={img.position} rotation={img.rotation}>
-          {/* Image Plane */}
           <mesh
             onClick={(e) => {
               e.stopPropagation()
@@ -189,17 +181,14 @@ function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) =
             <meshBasicMaterial map={textures[img.textureIndex]} side={THREE.DoubleSide} />
           </mesh>
 
-          {/* Text Label Below - Visible only from front roughly, but we just render it */}
-          {/* Text Label */}
           <Text
             position={[0, -1.2, 0]}
             fontSize={0.25}
             color="#ffffff"
-            font="/fonts/PlayfairDisplay-Italic.ttf"
             anchorX="center"
             anchorY="middle"
             fillOpacity={0.9}
-            scale={[-1, 1, 1]} // Fix mirroring
+            scale={[-1, 1, 1]}
           >
             {repeatedProjects[img.projectIndex].title}
           </Text>
@@ -215,7 +204,6 @@ export function Works() {
   return (
     <section id="works" className="relative w-full h-screen bg-black overflow-hidden">
 
-      {/* Header Overlay */}
       <div className="absolute top-8 left-0 right-0 z-10 flex flex-col items-center pointer-events-none">
         <p className="font-mono text-[10px] tracking-[0.4em] text-amber-500/60 uppercase">
           05 // PROJECT ORBIT
@@ -225,18 +213,15 @@ export function Works() {
         </h2>
       </div>
 
-      {/* 3D Scene */}
       <Canvas camera={{ position: [-12, 2, 12], fov: 45 }}>
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} intensity={1} />
 
-        {/* The Orbit System */}
         <ParticleSphere onProjectSelect={setSelectedProject} />
 
         <OrbitControls enablePan={true} enableZoom={true} enableRotate={true} minDistance={5} maxDistance={40} />
       </Canvas>
 
-      {/* Project Details Modal */}
       <AnimatePresence>
         {selectedProject && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -294,8 +279,8 @@ export function Works() {
                       href={selectedProject.link}
                       target="_blank"
                       className={`px-6 py-2 rounded-full font-mono text-xs uppercase tracking-widest transition-all ${selectedProject.private
-                        ? "bg-red-500/10 text-red-500 border border-red-500/20 cursor-not-allowed"
-                        : "bg-white text-black hover:bg-amber-400 hover:scale-105"
+                          ? "bg-red-500/10 text-red-500 border border-red-500/20 cursor-not-allowed"
+                          : "bg-white text-black hover:bg-amber-400 hover:scale-105"
                         }`}
                     >
                       {selectedProject.private ? "Private Repo" : "View Source"}
