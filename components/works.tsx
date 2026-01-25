@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Canvas, useFrame, useThree } from "@react-three/fiber"
+import { Canvas, useFrame } from "@react-three/fiber"
 import { OrbitControls, useTexture, Billboard, Text } from "@react-three/drei"
 import * as THREE from "three"
 
@@ -69,26 +69,26 @@ const projects = [
   },
 ]
 
-function ParticleSphere({ onProjectSelect, isHovered }: { onProjectSelect: (project: any) => void, isHovered: boolean }) {
-  const PARTICLE_COUNT = 1200
-  const PARTICLE_SIZE_MIN = 0.005
-  const PARTICLE_SIZE_MAX = 0.010
-  const SPHERE_RADIUS = 12 // Larger radius for more spacing with 5 projects
-  const POSITION_RANDOMNESS = 4
-  const ROTATION_SPEED_Y = 0.001 // Slower rotation
+function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) => void }) {
+  const PARTICLE_COUNT = 1000
+  const PARTICLE_SIZE_MIN = 0.003
+  const PARTICLE_SIZE_MAX = 0.008
+  const SPHERE_RADIUS = 5 // MUCH CLOSER
+  const POSITION_RANDOMNESS = 2
+  const ROTATION_SPEED_Y = 0.0015 // Smooth rotation, always spinning
 
   const groupRef = useRef<THREE.Group>(null)
 
-  // Only use the 5 projects - NO REPEATING
   const textureUrls = projects.map(p => p.image)
   const textures = useTexture(textureUrls)
 
+  // Fix texture orientation - flipY should be TRUE for correct display
   useMemo(() => {
     textures.forEach((texture) => {
       if (texture) {
         texture.wrapS = THREE.ClampToEdgeWrapping
         texture.wrapT = THREE.ClampToEdgeWrapping
-        texture.flipY = false
+        texture.flipY = true // FIX: Flip textures correctly
         texture.colorSpace = THREE.SRGBColorSpace
       }
     })
@@ -115,10 +115,9 @@ function ParticleSphere({ onProjectSelect, isHovered }: { onProjectSelect: (proj
     return temp
   }, [])
 
-  // Only 5 orbiting images - evenly spaced
   const orbitingImages = useMemo(() => {
     const temp = []
-    const total = projects.length // Just 5
+    const total = projects.length
 
     for (let i = 0; i < total; i++) {
       const angle = (i / total) * Math.PI * 2
@@ -134,9 +133,9 @@ function ParticleSphere({ onProjectSelect, isHovered }: { onProjectSelect: (proj
     return temp
   }, [])
 
+  // ALWAYS rotate - no pause
   useFrame(() => {
-    // Only rotate if NOT hovered
-    if (groupRef.current && !isHovered) {
+    if (groupRef.current) {
       groupRef.current.rotation.y += ROTATION_SPEED_Y
     }
   })
@@ -147,11 +146,11 @@ function ParticleSphere({ onProjectSelect, isHovered }: { onProjectSelect: (proj
       {particles.map((p, i) => (
         <mesh key={`p-${i}`} position={p.position} scale={p.scale}>
           <sphereGeometry args={[1, 8, 6]} />
-          <meshBasicMaterial color={p.color} transparent opacity={0.5} />
+          <meshBasicMaterial color={p.color} transparent opacity={0.4} />
         </mesh>
       ))}
 
-      {/* Orbiting Project Images - Using Billboard for always-facing camera */}
+      {/* Orbiting Project Images */}
       {orbitingImages.map((img, i) => (
         <Billboard
           key={`img-${i}`}
@@ -161,7 +160,6 @@ function ParticleSphere({ onProjectSelect, isHovered }: { onProjectSelect: (proj
           lockY={false}
           lockZ={false}
         >
-          {/* Image Plane */}
           <mesh
             onClick={(e) => {
               e.stopPropagation()
@@ -170,19 +168,21 @@ function ParticleSphere({ onProjectSelect, isHovered }: { onProjectSelect: (proj
             onPointerOver={() => document.body.style.cursor = 'pointer'}
             onPointerOut={() => document.body.style.cursor = 'auto'}
           >
-            <planeGeometry args={[2.5, 2.5]} />
+            <planeGeometry args={[1.8, 1.8]} />
             <meshBasicMaterial map={textures[img.projectIndex]} side={THREE.DoubleSide} transparent />
           </mesh>
 
-          {/* Text Label Below - Billboard makes it always face camera */}
+          {/* Text Label - Clean Monospace Style */}
           <Text
-            position={[0, -1.6, 0]}
-            fontSize={0.3}
-            color="white"
+            position={[0, -1.2, 0]}
+            fontSize={0.18}
+            color="#ffffff"
             anchorX="center"
             anchorY="middle"
+            font="/fonts/GeistMono-Regular.woff"
+            letterSpacing={0.05}
           >
-            {projects[img.projectIndex].title}
+            {projects[img.projectIndex].title.toUpperCase()}
           </Text>
         </Billboard>
       ))}
@@ -192,7 +192,6 @@ function ParticleSphere({ onProjectSelect, isHovered }: { onProjectSelect: (proj
 
 export function Works() {
   const [selectedProject, setSelectedProject] = useState<typeof projects[0] | null>(null)
-  const [isHovered, setIsHovered] = useState(false)
 
   return (
     <section id="works" className="relative w-full h-screen bg-black overflow-hidden">
@@ -208,27 +207,19 @@ export function Works() {
       </div>
 
       {/* 3D Scene */}
-      <div
-        className="w-full h-full"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        <Canvas camera={{ position: [-15, 3, 15], fov: 45 }}>
-          <ambientLight intensity={0.5} />
-          <pointLight position={[10, 10, 10]} intensity={1} />
+      <Canvas camera={{ position: [-8, 2, 8], fov: 50 }}>
+        <ambientLight intensity={0.6} />
+        <pointLight position={[10, 10, 10]} intensity={1} />
 
-          {/* The Orbit System */}
-          <ParticleSphere onProjectSelect={setSelectedProject} isHovered={isHovered} />
+        <ParticleSphere onProjectSelect={setSelectedProject} />
 
-          {/* OrbitControls: Zoom DISABLED, only rotate with drag */}
-          <OrbitControls
-            enablePan={false}
-            enableZoom={false}
-            enableRotate={true}
-            rotateSpeed={0.5}
-          />
-        </Canvas>
-      </div>
+        <OrbitControls
+          enablePan={false}
+          enableZoom={false}
+          enableRotate={true}
+          rotateSpeed={0.5}
+        />
+      </Canvas>
 
       {/* Project Details Modal */}
       <AnimatePresence>
@@ -249,7 +240,7 @@ export function Works() {
             >
               <button
                 onClick={() => setSelectedProject(null)}
-                className="absolute top-4 right-4 text-white/40 hover:text-white"
+                className="absolute top-4 right-4 text-white/40 hover:text-white text-2xl"
               >
                 ✕
               </button>
