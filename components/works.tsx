@@ -189,14 +189,14 @@ function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) =
             <meshBasicMaterial map={textures[img.textureIndex]} side={THREE.DoubleSide} />
           </mesh>
 
-          {/* Text Label Below - Visible only from front roughly, but we just render it */}
+          {/* Text Label Below */}
           <Text
             position={[0, -1.0, 0]}
             fontSize={0.2}
             color="white"
             anchorX="center"
             anchorY="middle"
-            opacity={0.8}
+            fillOpacity={0.8}
           >
             {repeatedProjects[img.projectIndex].title}
           </Text>
@@ -291,8 +291,8 @@ export function Works() {
                       href={selectedProject.link}
                       target="_blank"
                       className={`px-6 py-2 rounded-full font-mono text-xs uppercase tracking-widest transition-all ${selectedProject.private
-                          ? "bg-red-500/10 text-red-500 border border-red-500/20 cursor-not-allowed"
-                          : "bg-white text-black hover:bg-amber-400 hover:scale-105"
+                        ? "bg-red-500/10 text-red-500 border border-red-500/20 cursor-not-allowed"
+                        : "bg-white text-black hover:bg-amber-400 hover:scale-105"
                         }`}
                     >
                       {selectedProject.private ? "Private Repo" : "View Source"}
