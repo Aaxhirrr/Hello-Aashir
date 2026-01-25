@@ -73,22 +73,18 @@ function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) =
   const PARTICLE_COUNT = 1000
   const PARTICLE_SIZE_MIN = 0.003
   const PARTICLE_SIZE_MAX = 0.008
-  const SPHERE_RADIUS = 5 // MUCH CLOSER
-  const POSITION_RANDOMNESS = 2
-  const ROTATION_SPEED_Y = 0.0015 // Smooth rotation, always spinning
+  const SPHERE_RADIUS = 3.5 // EVEN CLOSER
+  const POSITION_RANDOMNESS = 1.5
+  const ROTATION_SPEED_Y = 0.001
 
   const groupRef = useRef<THREE.Group>(null)
 
   const textureUrls = projects.map(p => p.image)
   const textures = useTexture(textureUrls)
 
-  // Fix texture orientation - flipY should be TRUE for correct display
   useMemo(() => {
     textures.forEach((texture) => {
       if (texture) {
-        texture.wrapS = THREE.ClampToEdgeWrapping
-        texture.wrapT = THREE.ClampToEdgeWrapping
-        texture.flipY = true // FIX: Flip textures correctly
         texture.colorSpace = THREE.SRGBColorSpace
       }
     })
@@ -165,6 +161,7 @@ function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) =
               e.stopPropagation()
               onProjectSelect(projects[img.projectIndex])
             }}
+            scale={[-1, 1, 1]} // Fix mirrored image
             onPointerOver={() => document.body.style.cursor = 'pointer'}
             onPointerOut={() => document.body.style.cursor = 'auto'}
           >
@@ -175,11 +172,10 @@ function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) =
           {/* Text Label - Clean Monospace Style */}
           <Text
             position={[0, -1.2, 0]}
-            fontSize={0.18}
+            fontSize={0.2}
             color="#ffffff"
             anchorX="center"
             anchorY="middle"
-            font="/fonts/GeistMono-Regular.woff"
             letterSpacing={0.05}
           >
             {projects[img.projectIndex].title.toUpperCase()}
