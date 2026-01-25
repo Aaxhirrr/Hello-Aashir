@@ -3,7 +3,7 @@
 import { useState, useMemo, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Canvas, useFrame } from "@react-three/fiber"
-import { OrbitControls, useTexture, Billboard, Text } from "@react-three/drei"
+import { OrbitControls, useTexture, Billboard, Html } from "@react-three/drei"
 import * as THREE from "three"
 
 const projects = [
@@ -156,30 +156,33 @@ function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) =
           lockY={false}
           lockZ={false}
         >
-          <mesh
-            onClick={(e) => {
-              e.stopPropagation()
-              onProjectSelect(projects[img.projectIndex])
-            }}
-            scale={[-1, 1, 1]} // Fix mirrored image
-            onPointerOver={() => document.body.style.cursor = 'pointer'}
-            onPointerOut={() => document.body.style.cursor = 'auto'}
-          >
-            <planeGeometry args={[1.8, 1.8]} />
-            <meshBasicMaterial map={textures[img.projectIndex]} side={THREE.DoubleSide} transparent />
-          </mesh>
+          <group scale={[1, 1, 1]}>
+            <mesh
+              onClick={(e) => {
+                e.stopPropagation()
+                onProjectSelect(projects[img.projectIndex])
+              }}
+              onPointerOver={() => document.body.style.cursor = 'pointer'}
+              onPointerOut={() => document.body.style.cursor = 'auto'}
+            >
+              <planeGeometry args={[1.8, 1.8]} />
+              {/* DoubleSide allows viewing from back, transparent confirms shape */}
+              <meshBasicMaterial map={textures[img.projectIndex]} side={THREE.DoubleSide} transparent />
+            </mesh>
 
-          {/* Text Label - Clean Monospace Style */}
-          <Text
-            position={[0, -1.2, 0]}
-            fontSize={0.2}
-            color="#ffffff"
-            anchorX="center"
-            anchorY="middle"
-            letterSpacing={0.05}
-          >
-            {projects[img.projectIndex].title.toUpperCase()}
-          </Text>
+            {/* HTML Text Label to match website font correctly */}
+            <Html
+              transform
+              position={[0, -1.2, 0]}
+              center
+              distanceFactor={10}
+              style={{ pointerEvents: 'none' }}
+            >
+              <div className="font-mono text-white text-xs tracking-[0.2em] whitespace-nowrap bg-black/50 backdrop-blur-sm px-2 py-1 rounded border border-white/10 uppercase">
+                {projects[img.projectIndex].title}
+              </div>
+            </Html>
+          </group>
         </Billboard>
       ))}
     </group>
@@ -190,7 +193,7 @@ export function Works() {
   const [selectedProject, setSelectedProject] = useState<typeof projects[0] | null>(null)
 
   return (
-    <section id="works" className="relative w-full h-screen bg-black overflow-hidden">
+    <section id="works" className="relative w-full h-[85vh] min-h-[600px] bg-black overflow-hidden flex flex-col justify-center">
 
       {/* Header Overlay */}
       <div className="absolute top-8 left-0 right-0 z-10 flex flex-col items-center pointer-events-none">
