@@ -3,7 +3,7 @@
 import { useState, useMemo, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Canvas, useFrame } from "@react-three/fiber"
-import { OrbitControls, useTexture, Billboard, Html } from "@react-three/drei"
+import { OrbitControls, useTexture, Text } from "@react-three/drei"
 import * as THREE from "three"
 
 const projects = [
@@ -70,23 +70,38 @@ const projects = [
 ]
 
 function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) => void }) {
-  const PARTICLE_COUNT = 1000
-  const PARTICLE_SIZE_MIN = 0.003
-  const PARTICLE_SIZE_MAX = 0.008
-  const SPHERE_RADIUS = 3.5 // EVEN CLOSER
-  const POSITION_RANDOMNESS = 1.5
-  const ROTATION_SPEED_Y = 0.001
+  // Config matching the reference template
+  const PARTICLE_COUNT = 1500
+  const PARTICLE_SIZE_MIN = 0.005
+  const PARTICLE_SIZE_MAX = 0.010
+  const SPHERE_RADIUS = 9
+  const POSITION_RANDOMNESS = 4
+  const ROTATION_SPEED_X = 0.0
+  const ROTATION_SPEED_Y = 0.002 // Slightly faster for showcase
+
+  // Repeat projects to fill the orbit (targets ~25 images)
+  const repeatedProjects = useMemo(() => {
+    let list: typeof projects = []
+    for (let i = 0; i < 5; i++) {
+      list = [...list, ...projects]
+    }
+    return list
+  }, [])
 
   const groupRef = useRef<THREE.Group>(null)
 
-  const textureUrls = projects.map(p => p.image)
+  // Load Textures
+  // Note: We use the same image path multiple times, useTexture handles caching
+  const textureUrls = repeatedProjects.map(p => p.image)
   const textures = useTexture(textureUrls)
 
   useMemo(() => {
     textures.forEach((texture) => {
       if (texture) {
-        texture.colorSpace = THREE.SRGBColorSpace
+        texture.wrapS = THREE.ClampToEdgeWrapping
+        texture.wrapT = THREE.ClampToEdgeWrapping
         texture.flipY = false
+        texture.colorSpace = THREE.SRGBColorSpace
       }
     })
   }, [textures])
@@ -114,7 +129,7 @@ function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) =
 
   const orbitingImages = useMemo(() => {
     const temp = []
-    const total = projects.length
+    const total = repeatedProjects.length
 
     for (let i = 0; i < total; i++) {
       const angle = (i / total) * Math.PI * 2
@@ -122,15 +137,26 @@ function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) =
       const y = 0
       const z = SPHERE_RADIUS * Math.sin(angle)
 
+      const position = new THREE.Vector3(x, y, z)
+      const center = new THREE.Vector3(0, 0, 0)
+      const outwardDirection = position.clone().sub(center).normalize()
+
+      const euler = new THREE.Euler()
+      const matrix = new THREE.Matrix4()
+      matrix.lookAt(position, position.clone().add(outwardDirection), new THREE.Vector3(0, 1, 0))
+      euler.setFromRotationMatrix(matrix)
+      euler.z += Math.PI // Correction for plane orientation
+
       temp.push({
         position: [x, y, z] as [number, number, number],
-        projectIndex: i,
+        rotation: [euler.x, euler.y, euler.z] as [number, number, number],
+        projectIndex: i, // Index into repeatedProjects
+        textureIndex: i, // Index into textures
       })
     }
     return temp
-  }, [])
+  }, [repeatedProjects])
 
-  // ALWAYS rotate - no pause
   useFrame(() => {
     if (groupRef.current) {
       groupRef.current.rotation.y += ROTATION_SPEED_Y
@@ -143,49 +169,38 @@ function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) =
       {particles.map((p, i) => (
         <mesh key={`p-${i}`} position={p.position} scale={p.scale}>
           <sphereGeometry args={[1, 8, 6]} />
-          <meshBasicMaterial color={p.color} transparent opacity={0.4} />
+          <meshBasicMaterial color={p.color} transparent opacity={0.6} />
         </mesh>
       ))}
 
       {/* Orbiting Project Images */}
       {orbitingImages.map((img, i) => (
-        <Billboard
-          key={`img-${i}`}
-          position={img.position}
-          follow={true}
-          lockX={false}
-          lockY={false}
-          lockZ={false}
-        >
-          <group scale={[1, 1, 1]}>
-            <mesh
-              scale={[-1, 1, 1]}
-              onClick={(e) => {
-                e.stopPropagation()
-                onProjectSelect(projects[img.projectIndex])
-              }}
-              onPointerOver={() => document.body.style.cursor = 'pointer'}
-              onPointerOut={() => document.body.style.cursor = 'auto'}
-            >
-              <planeGeometry args={[1.8, 1.8]} />
-              {/* DoubleSide allows viewing from back, transparent confirms shape */}
-              <meshBasicMaterial map={textures[img.projectIndex]} side={THREE.DoubleSide} transparent />
-            </mesh>
+        <group key={`img-${i}`} position={img.position} rotation={img.rotation}>
+          {/* Image Plane */}
+          <mesh
+            onClick={(e) => {
+              e.stopPropagation()
+              onProjectSelect(repeatedProjects[img.projectIndex])
+            }}
+            onPointerOver={() => document.body.style.cursor = 'pointer'}
+            onPointerOut={() => document.body.style.cursor = 'auto'}
+          >
+            <planeGeometry args={[1.5, 1.5]} />
+            <meshBasicMaterial map={textures[img.textureIndex]} side={THREE.DoubleSide} />
+          </mesh>
 
-            {/* HTML Text Label to match website font correctly */}
-            <Html
-              transform
-              position={[0, -1.2, 0]}
-              center
-              distanceFactor={10}
-              style={{ pointerEvents: 'none' }}
-            >
-              <div className="font-serif italic text-white text-xs tracking-[0.2em] whitespace-nowrap bg-black/50 backdrop-blur-sm px-2 py-1 rounded border border-white/10 uppercase">
-                {projects[img.projectIndex].title}
-              </div>
-            </Html>
-          </group>
-        </Billboard>
+          {/* Text Label Below - Visible only from front roughly, but we just render it */}
+          <Text
+            position={[0, -1.0, 0]}
+            fontSize={0.2}
+            color="white"
+            anchorX="center"
+            anchorY="middle"
+            fillOpacity={0.8}
+          >
+            {repeatedProjects[img.projectIndex].title}
+          </Text>
+        </group>
       ))}
     </group>
   )
@@ -195,7 +210,7 @@ export function Works() {
   const [selectedProject, setSelectedProject] = useState<typeof projects[0] | null>(null)
 
   return (
-    <section id="works" className="relative w-full h-[85vh] min-h-[600px] bg-black overflow-hidden flex flex-col justify-center">
+    <section id="works" className="relative w-full h-screen bg-black overflow-hidden">
 
       {/* Header Overlay */}
       <div className="absolute top-8 left-0 right-0 z-10 flex flex-col items-center pointer-events-none">
@@ -208,18 +223,14 @@ export function Works() {
       </div>
 
       {/* 3D Scene */}
-      <Canvas camera={{ position: [-8, 2, 8], fov: 50 }}>
-        <ambientLight intensity={0.6} />
+      <Canvas camera={{ position: [-12, 2, 12], fov: 45 }}>
+        <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} intensity={1} />
 
+        {/* The Orbit System */}
         <ParticleSphere onProjectSelect={setSelectedProject} />
 
-        <OrbitControls
-          enablePan={false}
-          enableZoom={false}
-          enableRotate={true}
-          rotateSpeed={0.5}
-        />
+        <OrbitControls enablePan={true} enableZoom={true} enableRotate={true} minDistance={5} maxDistance={40} />
       </Canvas>
 
       {/* Project Details Modal */}
@@ -241,7 +252,7 @@ export function Works() {
             >
               <button
                 onClick={() => setSelectedProject(null)}
-                className="absolute top-4 right-4 text-white/40 hover:text-white text-2xl"
+                className="absolute top-4 right-4 text-white/40 hover:text-white"
               >
                 ✕
               </button>
