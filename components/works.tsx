@@ -190,13 +190,16 @@ function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) =
           </mesh>
 
           {/* Text Label Below - Visible only from front roughly, but we just render it */}
+          {/* Text Label */}
           <Text
-            position={[0, -1.0, 0]}
-            fontSize={0.2}
-            color="white"
+            position={[0, -1.2, 0]}
+            fontSize={0.25}
+            color="#ffffff"
+            font="/fonts/PlayfairDisplay-Italic.ttf"
             anchorX="center"
             anchorY="middle"
-            fillOpacity={0.8}
+            fillOpacity={0.9}
+            scale={[-1, 1, 1]} // Fix mirroring
           >
             {repeatedProjects[img.projectIndex].title}
           </Text>
