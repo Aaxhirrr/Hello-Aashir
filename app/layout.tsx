@@ -3,6 +3,10 @@ import type { Metadata, Viewport } from "next"
 import { Playfair_Display, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
+import { Navbar } from "./navbar"
+import { CustomCursor } from "../components/custom-cursor"
+import { SmoothScroll } from "../components/smooth-scroll"
+import { Footer } from "../components/footer"
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -31,9 +35,14 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${playfair.variable} ${geistMono.variable}`}>
       <body className="font-sans antialiased overflow-x-hidden">
-        <div className="noise-overlay" />
-        {children}
-        <Analytics />
+        <SmoothScroll>
+          <div className="noise-overlay" />
+          <CustomCursor />
+          <Navbar />
+          {children}
+          <Footer />
+          <Analytics />
+        </SmoothScroll>
       </body>
     </html>
   )

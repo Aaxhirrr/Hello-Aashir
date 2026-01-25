@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState, useRef } from "react"
-import { motion } from "framer-motion"
 
 interface Star {
     id: number
@@ -11,7 +10,11 @@ interface Star {
     duration: number
 }
 
-export function ShootingStars() {
+interface ShootingStarsProps {
+    delay?: number // Delay in seconds before stars start spawning
+}
+
+export function ShootingStars({ delay = 0 }: ShootingStarsProps) {
     const [stars, setStars] = useState<Star[]>([])
 
     useEffect(() => {
@@ -34,41 +37,35 @@ export function ShootingStars() {
         }
 
         // Spawn loop
-        // Random interval between occasional (2s) and rare (6s), with chance of burst
         const loop = () => {
             const nextSpawn = Math.random() * 4000 + 1000
             spawnStar()
             timeoutRef.current = setTimeout(loop, nextSpawn)
         }
 
-        let timeoutRef = { current: setTimeout(loop, 2000) }
+        // Start loop after initial delay
+        let timeoutRef = { current: setTimeout(loop, delay * 1000 + 2000) }
 
         return () => clearTimeout(timeoutRef.current)
-    }, [])
+    }, [delay])
 
     return (
         <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden z-[1]">
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 3, ease: "easeInOut" }}
-            >
-                {stars.map(star => (
-                    <span
-                        key={star.id}
-                        className="absolute w-[2px] h-[2px] bg-white rounded-full opacity-0"
-                        style={{
-                            top: `${star.top}%`,
-                            left: `${star.left}%`,
-                            boxShadow: "0 0 0 4px rgba(255, 255, 255, 0.1), 0 0 0 8px rgba(255, 255, 255, 0.1), 0 0 20px rgba(255, 255, 255, 1)",
-                            animation: `shooting-star ${star.duration}s linear forwards`
-                        }}
-                    >
-                        {/* Tail */}
-                        <span className="absolute top-1/2 right-[0px] -translate-y-1/2 w-[300px] h-[1px] bg-gradient-to-l from-white via-transparent to-transparent opacity-80" />
-                    </span>
-                ))}
-            </motion.div>
+            {stars.map(star => (
+                <span
+                    key={star.id}
+                    className="absolute w-[2px] h-[2px] bg-white rounded-full opacity-0"
+                    style={{
+                        top: `${star.top}%`,
+                        left: `${star.left}%`,
+                        boxShadow: "0 0 0 4px rgba(255, 255, 255, 0.1), 0 0 0 8px rgba(255, 255, 255, 0.1), 0 0 20px rgba(255, 255, 255, 1)",
+                        animation: `shooting-star ${star.duration}s linear forwards`
+                    }}
+                >
+                    {/* Tail */}
+                    <span className="absolute top-1/2 right-[0px] -translate-y-1/2 w-[300px] h-[1px] bg-gradient-to-l from-white via-transparent to-transparent opacity-80" />
+                </span>
+            ))}
 
             <style jsx>{`
         @keyframes shooting-star {

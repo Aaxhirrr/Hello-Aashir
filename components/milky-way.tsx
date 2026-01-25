@@ -67,14 +67,18 @@ void main() {
     
     // === ANIMATION ===
     float t = iTime * 0.15;
+    
+    // Flow along the "trail"
     vec2 flow = vec2(t * 0.5, t * 0.1);
     
     // Generate Nebula Structure
+    // Offset logic based on distance from center line
     float density = 1.0 - smoothstep(0.0, 1.0, abs(uv.y));
     
     float gas = fbm(uv * 2.0 + flow); 
-    float detail = fbm(uv * 4.0 - flow * 0.5); 
+    float detail = fbm(uv * 4.0 - flow * 0.5);
     
+    // Combine
     float nebula = (gas + detail) * 0.5;
     nebula *= density * density;
     
@@ -86,7 +90,7 @@ void main() {
     vec3 col = mix(colDeep, colMid, smoothstep(0.2, 0.6, nebula));
     col = mix(col, colCore, smoothstep(0.6, 1.2, nebula));
     
-    // Stars in trail
+    // Add "Stars"
     float dust = hash(uv * 10.0 + t);
     if (dust > 0.98 && nebula > 0.3) {
         float twinkle = sin(t * 5.0 + dust * 100.0) * 0.5 + 0.5;
@@ -96,8 +100,7 @@ void main() {
     // Soften edges
     float alpha = smoothstep(0.0, 0.4, nebula);
     
-    // Final composite
-    gl_FragColor = vec4(col, alpha * 0.8); // 0.8 opacity
+    gl_FragColor = vec4(col, alpha * 0.9); // High opacity for visibility
 }
 `
 
@@ -116,7 +119,7 @@ function MilkyWayMesh() {
         if (mesh.current) {
             uniforms.iTime.value = state.clock.getElapsedTime()
             uniforms.iResolution.value.set(state.viewport.width, state.viewport.height)
-            mesh.current.scale.set(state.viewport.width, state.viewport.height, 1) // Fullscreen
+            mesh.current.scale.set(state.viewport.width, state.viewport.height, 1)
         }
     })
 
@@ -128,7 +131,7 @@ function MilkyWayMesh() {
                 fragmentShader={fragmentShader}
                 uniforms={uniforms}
                 transparent={true}
-                blending={THREE.NormalBlending} // Normal blending for solidity
+                blending={THREE.AdditiveBlending}
                 depthWrite={false}
             />
         </mesh>
@@ -137,7 +140,7 @@ function MilkyWayMesh() {
 
 export function MilkyWay() {
     return (
-        <div className="absolute inset-0 w-full h-full -z-10 opacity-100 pointer-events-none">
+        <div className="absolute inset-0 w-full h-full pointer-events-none">
             <Canvas camera={{ position: [0, 0, 1] }} dpr={[1, 1.5]}>
                 <MilkyWayMesh />
             </Canvas>

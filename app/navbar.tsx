@@ -2,17 +2,20 @@
 
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 
 const navLinks = [
-  { label: "About", href: "#about" },
-  { label: "Experience", href: "#experience" },
-  { label: "Work", href: "#works" },
-  { label: "Contact", href: "#contact" },
+  { label: "About", href: "/about" },
+  { label: "Experience", href: "/experience" },
+  { label: "Work", href: "/work" },
+  { label: "Contact", href: "#contact" }, // Keep hash for footer if desired, or make page
 ]
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const pathname = usePathname()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,14 +24,6 @@ export function Navbar() {
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
-
-  const scrollToSection = (href: string) => {
-    setIsMenuOpen(false)
-    const element = document.querySelector(href)
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" })
-    }
-  }
 
   return (
     <>
@@ -41,29 +36,28 @@ export function Navbar() {
       >
         <nav className="flex items-center justify-between px-6 py-4 my-0 md:px-12 md:py-5">
           {/* Logo */}
-          <a
-            href="#"
-            onClick={(e) => {
-              e.preventDefault()
-              window.scrollTo({ top: 0, behavior: "smooth" })
-            }}
+          <Link
+            href="/"
+            onClick={() => setIsMenuOpen(false)}
             className="group flex items-center gap-2"
           >
             <span className="font-mono text-xs tracking-widest text-muted-foreground">AASHIR — JAVED</span>
             <span className="w-1.5 h-1.5 rounded-full bg-accent group-hover:scale-150 transition-transform duration-300" />
-          </a>
+          </Link>
 
           {/* Desktop Navigation */}
           <ul className="hidden md:flex items-center gap-8">
             {navLinks.map((link, index) => (
               <li key={link.label}>
-                <button
-                  onClick={() => scrollToSection(link.href)}
-                  className="group relative font-mono text-xs tracking-wider text-muted-foreground hover:text-foreground transition-colors duration-300 uppercase"
+                <Link
+                  href={link.href}
+                  className={`group relative font-mono text-xs tracking-wider transition-colors duration-300 uppercase ${pathname === link.href ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                    }`}
                 >
                   {link.label}
-                  <span className="absolute -bottom-1 left-0 w-0 h-px bg-foreground group-hover:w-full transition-all duration-300" />
-                </button>
+                  <span className={`absolute -bottom-1 left-0 h-px bg-foreground transition-all duration-300 ${pathname === link.href ? "w-full" : "w-0 group-hover:w-full"
+                    }`} />
+                </Link>
               </li>
             ))}
           </ul>
@@ -111,17 +105,21 @@ export function Navbar() {
           >
             <nav className="flex flex-col items-center justify-center h-full gap-8">
               {navLinks.map((link, index) => (
-                <motion.button
+                <Link
                   key={link.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 20 }}
-                  transition={{ delay: index * 0.1 }}
-                  onClick={() => scrollToSection(link.href)}
-                  className="group text-4xl font-sans tracking-tight text-foreground"
+                  href={link.href}
+                  onClick={() => setIsMenuOpen(false)}
                 >
-                  {link.label}
-                </motion.button>
+                  <motion.span
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="block text-4xl font-sans tracking-tight text-foreground hover:text-accent transition-colors"
+                  >
+                    {link.label}
+                  </motion.span>
+                </Link>
               ))}
               <motion.div
                 initial={{ opacity: 0 }}

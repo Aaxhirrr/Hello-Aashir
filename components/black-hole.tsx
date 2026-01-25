@@ -165,11 +165,7 @@ void main() {
          float s = random(uv * 4.0);
          if (s > 0.993) {
              float twinkle = sin(iTime * 1.0 + s * 100.0) * 0.5 + 0.5;
-             
-             // Smooth Fade-In on Load (0.5s to 3.5s)
-             float starFade = smoothstep(0.5, 3.5, iTime);
-             
-             col += vec3(twinkle * 0.5) * starFade;
+             col += vec3(twinkle * 0.5);
          }
     }
 
@@ -196,7 +192,7 @@ function BlackHoleMesh() {
             // Velocity V(t) = vMin + (vMax - vMin) * exp(-decay * t)
             // Position T(t) = vMin * t + (vMax - vMin)/decay * (1 - exp(-decay * t))
 
-            const vMin = 1.0; // Settle speed (multiplied by 0.2 in shader)
+            const vMin = 3.0; // Settle speed (multiplied by 0.2 in shader)
             const vMax = 20.0; // Initial surge speed
             const decay = 0.8; // How fast it settles
 
@@ -227,8 +223,9 @@ function BlackHoleMesh() {
 
 export function BlackHole() {
     return (
-        <div className="absolute inset-0 bg-black w-full h-full -z-10">
-            <Canvas camera={{ position: [0, 0, 1] }} dpr={[1, 2]}>
+        <div className="absolute inset-0 bg-black w-full h-full -z-10 animate-fade-in duration-1000">
+            <Canvas camera={{ position: [0, 0, 1] }} dpr={[1, 2]} gl={{ alpha: false }}>
+                <color attach="background" args={['#000000']} />
                 <BlackHoleMesh />
             </Canvas>
         </div>
