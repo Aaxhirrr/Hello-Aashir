@@ -2,8 +2,8 @@
 
 import { useState, useMemo, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Canvas, useFrame } from "@react-three/fiber"
-import { OrbitControls, useTexture, Text } from "@react-three/drei"
+import { Canvas, useFrame, useThree } from "@react-three/fiber"
+import { OrbitControls, useTexture, Billboard, Text } from "@react-three/drei"
 import * as THREE from "three"
 
 const projects = [
@@ -69,30 +69,18 @@ const projects = [
   },
 ]
 
-function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) => void }) {
-  // Config matching the reference template
-  const PARTICLE_COUNT = 1500
+function ParticleSphere({ onProjectSelect, isHovered }: { onProjectSelect: (project: any) => void, isHovered: boolean }) {
+  const PARTICLE_COUNT = 1200
   const PARTICLE_SIZE_MIN = 0.005
   const PARTICLE_SIZE_MAX = 0.010
-  const SPHERE_RADIUS = 9
+  const SPHERE_RADIUS = 12 // Larger radius for more spacing with 5 projects
   const POSITION_RANDOMNESS = 4
-  const ROTATION_SPEED_X = 0.0
-  const ROTATION_SPEED_Y = 0.002 // Slightly faster for showcase
-
-  // Repeat projects to fill the orbit (targets ~25 images)
-  const repeatedProjects = useMemo(() => {
-    let list: typeof projects = []
-    for (let i = 0; i < 5; i++) {
-      list = [...list, ...projects]
-    }
-    return list
-  }, [])
+  const ROTATION_SPEED_Y = 0.001 // Slower rotation
 
   const groupRef = useRef<THREE.Group>(null)
 
-  // Load Textures
-  // Note: We use the same image path multiple times, useTexture handles caching
-  const textureUrls = repeatedProjects.map(p => p.image)
+  // Only use the 5 projects - NO REPEATING
+  const textureUrls = projects.map(p => p.image)
   const textures = useTexture(textureUrls)
 
   useMemo(() => {
@@ -127,9 +115,10 @@ function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) =
     return temp
   }, [])
 
+  // Only 5 orbiting images - evenly spaced
   const orbitingImages = useMemo(() => {
     const temp = []
-    const total = repeatedProjects.length
+    const total = projects.length // Just 5
 
     for (let i = 0; i < total; i++) {
       const angle = (i / total) * Math.PI * 2
@@ -137,28 +126,17 @@ function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) =
       const y = 0
       const z = SPHERE_RADIUS * Math.sin(angle)
 
-      const position = new THREE.Vector3(x, y, z)
-      const center = new THREE.Vector3(0, 0, 0)
-      const outwardDirection = position.clone().sub(center).normalize()
-
-      const euler = new THREE.Euler()
-      const matrix = new THREE.Matrix4()
-      matrix.lookAt(position, position.clone().add(outwardDirection), new THREE.Vector3(0, 1, 0))
-      euler.setFromRotationMatrix(matrix)
-      euler.z += Math.PI // Correction for plane orientation
-
       temp.push({
         position: [x, y, z] as [number, number, number],
-        rotation: [euler.x, euler.y, euler.z] as [number, number, number],
-        projectIndex: i, // Index into repeatedProjects
-        textureIndex: i, // Index into textures
+        projectIndex: i,
       })
     }
     return temp
-  }, [repeatedProjects])
+  }, [])
 
   useFrame(() => {
-    if (groupRef.current) {
+    // Only rotate if NOT hovered
+    if (groupRef.current && !isHovered) {
       groupRef.current.rotation.y += ROTATION_SPEED_Y
     }
   })
@@ -169,38 +147,44 @@ function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) =
       {particles.map((p, i) => (
         <mesh key={`p-${i}`} position={p.position} scale={p.scale}>
           <sphereGeometry args={[1, 8, 6]} />
-          <meshBasicMaterial color={p.color} transparent opacity={0.6} />
+          <meshBasicMaterial color={p.color} transparent opacity={0.5} />
         </mesh>
       ))}
 
-      {/* Orbiting Project Images */}
+      {/* Orbiting Project Images - Using Billboard for always-facing camera */}
       {orbitingImages.map((img, i) => (
-        <group key={`img-${i}`} position={img.position} rotation={img.rotation}>
+        <Billboard
+          key={`img-${i}`}
+          position={img.position}
+          follow={true}
+          lockX={false}
+          lockY={false}
+          lockZ={false}
+        >
           {/* Image Plane */}
           <mesh
             onClick={(e) => {
               e.stopPropagation()
-              onProjectSelect(repeatedProjects[img.projectIndex])
+              onProjectSelect(projects[img.projectIndex])
             }}
             onPointerOver={() => document.body.style.cursor = 'pointer'}
             onPointerOut={() => document.body.style.cursor = 'auto'}
           >
-            <planeGeometry args={[1.5, 1.5]} />
-            <meshBasicMaterial map={textures[img.textureIndex]} side={THREE.DoubleSide} />
+            <planeGeometry args={[2.5, 2.5]} />
+            <meshBasicMaterial map={textures[img.projectIndex]} side={THREE.DoubleSide} transparent />
           </mesh>
 
-          {/* Text Label Below */}
+          {/* Text Label Below - Billboard makes it always face camera */}
           <Text
-            position={[0, -1.0, 0]}
-            fontSize={0.2}
+            position={[0, -1.6, 0]}
+            fontSize={0.3}
             color="white"
             anchorX="center"
             anchorY="middle"
-            fillOpacity={0.8}
           >
-            {repeatedProjects[img.projectIndex].title}
+            {projects[img.projectIndex].title}
           </Text>
-        </group>
+        </Billboard>
       ))}
     </group>
   )
@@ -208,6 +192,7 @@ function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) =
 
 export function Works() {
   const [selectedProject, setSelectedProject] = useState<typeof projects[0] | null>(null)
+  const [isHovered, setIsHovered] = useState(false)
 
   return (
     <section id="works" className="relative w-full h-screen bg-black overflow-hidden">
@@ -223,15 +208,27 @@ export function Works() {
       </div>
 
       {/* 3D Scene */}
-      <Canvas camera={{ position: [-12, 2, 12], fov: 45 }}>
-        <ambientLight intensity={0.5} />
-        <pointLight position={[10, 10, 10]} intensity={1} />
+      <div
+        className="w-full h-full"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <Canvas camera={{ position: [-15, 3, 15], fov: 45 }}>
+          <ambientLight intensity={0.5} />
+          <pointLight position={[10, 10, 10]} intensity={1} />
 
-        {/* The Orbit System */}
-        <ParticleSphere onProjectSelect={setSelectedProject} />
+          {/* The Orbit System */}
+          <ParticleSphere onProjectSelect={setSelectedProject} isHovered={isHovered} />
 
-        <OrbitControls enablePan={true} enableZoom={true} enableRotate={true} minDistance={5} maxDistance={40} />
-      </Canvas>
+          {/* OrbitControls: Zoom DISABLED, only rotate with drag */}
+          <OrbitControls
+            enablePan={false}
+            enableZoom={false}
+            enableRotate={true}
+            rotateSpeed={0.5}
+          />
+        </Canvas>
+      </div>
 
       {/* Project Details Modal */}
       <AnimatePresence>
