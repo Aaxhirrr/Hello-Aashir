@@ -188,7 +188,6 @@ function ParticleSphere({ onProjectSelect }: { onProjectSelect: (project: any) =
             anchorX="center"
             anchorY="middle"
             fillOpacity={0.9}
-            scale={[-1, 1, 1]}
           >
             {repeatedProjects[img.projectIndex].title}
           </Text>
@@ -279,8 +278,8 @@ export function Works() {
                       href={selectedProject.link}
                       target="_blank"
                       className={`px-6 py-2 rounded-full font-mono text-xs uppercase tracking-widest transition-all ${selectedProject.private
-                          ? "bg-red-500/10 text-red-500 border border-red-500/20 cursor-not-allowed"
-                          : "bg-white text-black hover:bg-amber-400 hover:scale-105"
+                        ? "bg-red-500/10 text-red-500 border border-red-500/20 cursor-not-allowed"
+                        : "bg-white text-black hover:bg-amber-400 hover:scale-105"
                         }`}
                     >
                       {selectedProject.private ? "Private Repo" : "View Source"}
