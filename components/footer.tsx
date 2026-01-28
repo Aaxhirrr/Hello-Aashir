@@ -40,6 +40,12 @@ export function Footer() {
             <h2 className="text-4xl md:text-6xl font-sans font-bold tracking-tighter text-center">
               Let's build the <span className="italic font-serif text-white/50">unimagined.</span>
             </h2>
+            <div className="mt-4 px-4 py-1 border border-amber-500/30 rounded-full bg-amber-500/10 backdrop-blur-sm">
+              <p className="font-mono text-[10px] tracking-widest text-amber-500 uppercase flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                Under Progress
+              </p>
+            </div>
 
             {/* Clean Email Copy Row */}
             <div className="group flex items-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full p-2 pr-4 transition-all duration-300">
