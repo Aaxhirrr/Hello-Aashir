@@ -7,7 +7,7 @@ import { motion, useScroll, useTransform } from "framer-motion"
 const experiences = [
     {
         id: "LOG-01",
-        role: "Research Intern",
+        role: "ML Research Intern",
         company: "Fulton Undergraduate Research Initiative",
         period: "Jan 2026 — Present",
         desc: "Building a benchmark testbed to simulate memory in AI systems using large real-world Alzheimer’s datasets, combining software engineering and machine learning.",
@@ -15,14 +15,22 @@ const experiences = [
     },
     {
         id: "LOG-02",
+        role: "Software Lead",
+        company: "Spain Beach Cleanup Initiative",
+        period: "Jan 2026 — Present",
+        desc: "Leading software development for a coastal cleanup coordination platform, building tools to track cleanup activities and environmental impact across Spanish beaches.",
+        tech: ["React", "Node.js", "GIS"]
+    },
+    {
+        id: "LOG-03",
         role: "Beta Contributor",
         company: "CreateAI Lab",
-        period: "Aug 2025 — Present",
+        period: "Aug 2025 — Jan 2026",
         desc: "Evaluated and stress-tested 30+ LLMs. Collaborated with faculty to turn needs into clear requirements for custom assistants with responsible-AI guardrails.",
         tech: ["LLMs", "Eval", "Prompt Eng"]
     },
     {
-        id: "LOG-03",
+        id: "LOG-04",
         role: "Software Engineering Intern",
         company: "Sedai Inc.",
         period: "May 2025 — Oct 2025",
@@ -30,7 +38,7 @@ const experiences = [
         tech: ["AWS Bedrock", "Python", "Distributed Systems"]
     },
     {
-        id: "LOG-04",
+        id: "LOG-05",
         role: "Undergraduate Researcher",
         company: "Ira A. Fulton Schools",
         period: "Jan 2025 — Aug 2025",
@@ -38,7 +46,7 @@ const experiences = [
         tech: ["Neo4j", "NLP", "ETL"]
     },
     {
-        id: "LOG-05",
+        id: "LOG-06",
         role: "Mathematics Assistant",
         company: "Arizona State University",
         period: "Aug 2024 — Present",
@@ -46,7 +54,7 @@ const experiences = [
         tech: ["Mathematics", "Pedagogy"]
     },
     {
-        id: "LOG-06",
+        id: "LOG-07",
         role: "Project Lead",
         company: "EPICS at ASU",
         period: "Aug 2024 — May 2025",
@@ -66,7 +74,7 @@ const experiences = [
         ]
     },
     {
-        id: "LOG-07",
+        id: "LOG-08",
         role: "Open Source Project",
         company: "Pyramid Computer Solutions",
         period: "Dec 2024 — Jan 2025",

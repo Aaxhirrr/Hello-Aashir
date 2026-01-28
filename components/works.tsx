@@ -210,6 +210,12 @@ export function Works() {
         <h2 className="font-sans text-4xl md:text-6xl font-bold tracking-tighter text-white">
           Selected <span className="italic font-serif font-light text-white/50">Works</span>
         </h2>
+        <div className="mt-4 px-4 py-1 border border-amber-500/30 rounded-full bg-amber-500/10 backdrop-blur-sm">
+          <p className="font-mono text-[10px] tracking-widest text-amber-500 uppercase flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+            Under Progress
+          </p>
+        </div>
       </div>
 
       <Canvas camera={{ position: [-12, 2, 12], fov: 45 }}>
