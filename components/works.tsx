@@ -210,9 +210,9 @@ export function Works() {
         <h2 className="font-sans text-4xl md:text-6xl font-bold tracking-tighter text-white">
           Selected <span className="italic font-serif font-light text-white/50">Works</span>
         </h2>
-        <div className="mt-4 px-4 py-1 border border-amber-500/30 rounded-full bg-amber-500/10 backdrop-blur-sm">
-          <p className="font-mono text-[10px] tracking-widest text-amber-500 uppercase flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+        <div className="mt-6 px-6 py-2.5 border-2 border-amber-500/40 rounded-full bg-amber-500/15 backdrop-blur-sm shadow-lg shadow-amber-500/20">
+          <p className="font-mono text-sm tracking-widest text-amber-400 uppercase flex items-center gap-3 font-bold">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse shadow-lg shadow-amber-400/50" />
             Under Progress
           </p>
         </div>
